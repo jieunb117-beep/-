@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>중2 과학: 영양소 검출 가상 실험실 & 인터랙티브 퀴즈</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            touch-action: manipulation;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Animation effects */
+        .pulse-glow {
+            animation: pulse-ring 2s infinite;
+        }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .option-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .option-card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Mindmap SVG Connector lines animation */
+        .mindmap-line {
+            stroke-dasharray: 8;
+            animation: dash 20s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -100; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-slate-900 text-slate-100 selection:bg-blue-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-950/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+            <!-- Title & Metadata -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20">
+                    🧪
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm sm:text-base md:text-lg leading-tight text-white flex items-center gap-2">
+                        영양소 검출 가상 실험실
+                        <span class="hidden md:inline-block text-[11px] px-2 py-0.5 bg-blue-950 text-blue-400 border border-blue-800/60 rounded-full font-medium">중2 과학</span>
+                    </h1>
+                    <p class="text-[11px] sm:text-xs text-slate-400">5. 동물과 에너지 - 영양소 검출 탐구</p>
+                </div>
+            </div>
+
+            <!-- Global Action Controls & Navigation -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button id="soundToggleBtn" onclick="toggleSound()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                    <span id="soundIcon">🔊</span> <span id="soundText" class="hidden sm:inline">사운드 ON</span>
+                </button>
+
+                <button onclick="globalResetAll()" class="px-2.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-800/80 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition active:scale-95">
+                    <span>🔄</span> <span class="hidden sm:inline">전체 초기화</span>
+                </button>
+
+                <nav class="flex space-x-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                    <button onclick="switchTab('sim')" id="tab-sim" class="tab-btn px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 bg-blue-600 text-white shadow-md">
+                        <span>🔬</span> <span class="hidden xs:inline">가상 실험실</span>
+                    </button>
+                    <button onclick="switchTab('result')" id="tab-result" class="tab-btn px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800">
+                        <span>📊</span> <span class="hidden xs:inline">결과 정리</span>
+                    </button>
+                    <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800">
+                        <span>✏️</span> <span class="hidden xs:inline">인터랙티브 퀴즈</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Application Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 space-y-6">
+
+        <!-- ========================================== -->
+        <!-- SECTION 1: VIRTUAL LAB SIMULATOR           -->
+        <!-- ========================================== -->
+        <section id="sec-sim" class="space-y-4">
+            <div class="bg-slate-950 rounded-2xl border border-slate-800 p-4 sm:p-6 shadow-2xl">
+                <!-- Top Control Bar -->
+                <div class="flex flex-col md:flex-row justify-between md:items-center pb-4 mb-4 border-b border-slate-800/80 gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span id="stepBadge" class="px-2.5 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-bold rounded-full">
+                                1단계: 12홈판 시약 반응
+                            </span>
+                            <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                                🔬 가상 실험 관찰실
+                            </h2>
+                        </div>
+                        <p id="stepDescription" class="text-xs sm:text-sm text-slate-400 mt-1">
+                            우측 시약을 선택한 후 홈판의 해당 행을 터치/클릭하여 시약 반응을 관찰하세요.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="resetCurrentSimStep()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-medium flex items-center gap-1.5 border border-slate-700 transition">
+                            <span>🔄</span> 현재 단계 다시하기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Simulation Canvas & Control Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    <!-- Interactive Canvas Container -->
+                    <div class="lg:col-span-8 bg-slate-900 rounded-2xl relative overflow-hidden h-[380px] sm:h-[460px] shadow-inner border border-slate-800 flex items-center justify-center">
+                        <canvas id="simCanvas" class="w-full h-full block cursor-pointer touch-none"></canvas>
+
+                        <!-- Toast Alert Floating Overlay -->
+                        <div id="simToast" class="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-950/90 text-slate-100 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium shadow-2xl opacity-0 transition-all duration-300 pointer-events-none backdrop-blur-md border border-slate-700 flex items-center gap-2 z-20">
+                            <span id="toastIcon">💡</span> <span id="toastMsg">안내 메시지</span>
+                        </div>
+
+                        <!-- Hotplate Heat Control Floating Button -->
+                        <button id="simHeatBtn" onclick="triggerHeating()" class="hidden absolute bottom-6 right-6 bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold px-5 py-3 rounded-xl shadow-2xl transition transform active:scale-95 flex items-center gap-2 text-xs sm:text-sm pulse-glow z-20">
+                            <span>🔥</span> 80~90℃ 중탕 가열 시작
+                        </button>
+                    </div>
+
+                    <!-- Side Control Panel -->
+                    <div class="lg:col-span-4 flex flex-col justify-between space-y-4 bg-slate-900/60 p-4 sm:p-5 rounded-2xl border border-slate-800">
+                        <div class="space-y-4">
+                            <!-- Helper Guide Card -->
+                            <div class="bg-blue-950/40 border border-blue-800/50 rounded-xl p-3.5 text-xs text-blue-200 leading-relaxed shadow-sm">
+                                <span class="font-bold flex items-center gap-1.5 text-blue-400 mb-1">
+                                    <span>📌</span> 실험 가이드:
+                                </span>
+                                <p id="simInstruction">
+                                    [1단계] 시약을 클릭하여 선택한 후, 12홈판의 해당하는 행의 홈을 클릭하면 스포이트 떨어뜨리기 애니메이션이 작동합니다.
+                                </p>
+                            </div>
+
+                            <!-- Reagent Selection List -->
+                            <div class="space-y-2">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex justify-between items-center">
+                                    <span>검출 시약 선택</span>
+                                    <span id="selectedReagentBadge" class="text-[11px] text-blue-400 font-normal">선택 안 됨</span>
+                                </h3>
+
+                                <button onclick="selectReagent('iodine')" id="btn-iodine" class="reagent-btn w-full p-3 rounded-xl border border-slate-800 bg-slate-950 hover:border-amber-500/60 transition text-left flex items-center gap-3 shadow-sm group">
+                                    <div class="w-8 h-8 rounded-lg border border-amber-600/40 bg-amber-900/80 flex items-center justify-center flex-shrink-0 text-amber-300 font-bold text-xs shadow-inner">
+                                        I₂
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-xs sm:text-sm font-bold text-slate-200 group-hover:text-amber-300 transition truncate">아이오딘-아이오딘화 칼륨</div>
+                                        <div class="text-[11px] text-slate-400">녹말 검출 (양성: 청람색)</div>
+                                    </div>
+                                </button>
+
+                                <button onclick="selectReagent('biuret')" id="btn-biuret" class="reagent-btn w-full p-3 rounded-xl border border-slate-800 bg-slate-950 hover:border-purple-500/60 transition text-left flex items-center gap-3 shadow-sm group">
+                                    <div class="w-8 h-8 rounded-lg border border-indigo-600/40 bg-indigo-900/80 flex items-center justify-center flex-shrink-0 text-indigo-300 font-bold text-xs shadow-inner">
+                                        Cu
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-xs sm:text-sm font-bold text-slate-200 group-hover:text-purple-300 transition truncate">뷰렛 용액 (5% NaOH+1% CuSO₄)</div>
+                                        <div class="text-[11px] text-slate-400">단백질 검출 (양성: 보라색)</div>
+                                    </div>
+                                </button>
+
+                                <button onclick="selectReagent('sudan')" id="btn-sudan" class="reagent-btn w-full p-3 rounded-xl border border-slate-800 bg-slate-950 hover:border-rose-500/60 transition text-left flex items-center gap-3 shadow-sm group">
+                                    <div class="w-8 h-8 rounded-lg border border-rose-600/40 bg-rose-900/80 flex items-center justify-center flex-shrink-0 text-rose-300 font-bold text-xs shadow-inner">
+                                        SⅢ
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-xs sm:text-sm font-bold text-slate-200 group-hover:text-rose-300 transition truncate">수단 Ⅲ 용액</div>
+                                        <div class="text-[11px] text-slate-400">지방 검출 (양성: 선홍색)</div>
+                                    </div>
+                                </button>
+
+                                <button onclick="selectReagent('benedict')" id="btn-benedict" class="reagent-btn w-full p-3 rounded-xl border border-slate-800 bg-slate-950 hover:border-sky-500/60 transition text-left flex items-center gap-3 shadow-sm group">
+                                    <div class="w-8 h-8 rounded-lg border border-sky-600/40 bg-sky-900/80 flex items-center justify-center flex-shrink-0 text-sky-300 font-bold text-xs shadow-inner">
+                                        Bn
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-xs sm:text-sm font-bold text-slate-200 group-hover:text-sky-300 transition truncate">베네딕트 용액</div>
+                                        <div class="text-[11px] text-slate-400">당 검출 (가열 필요 ➔ 양성: 황적색)</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step Transition Button -->
+                        <div class="pt-3 border-t border-slate-800">
+                            <button id="simStepBtn" onclick="nextSimulationStep()" class="w-full py-3 bg-slate-800 text-slate-500 font-bold rounded-xl cursor-not-allowed transition text-xs sm:text-sm flex items-center justify-center gap-2" disabled>
+                                <span>2단계: 베네딕트 중탕 가열 실험 ➔</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SECTION 2: RESULTS SUMMARY & MINDMAP       -->
+        <!-- ========================================== -->
+        <section id="sec-result" class="hidden space-y-6">
+            <div class="bg-slate-950 rounded-2xl border border-slate-800 p-4 sm:p-6 shadow-2xl">
+                <div class="pb-4 mb-4 border-b border-slate-800 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                            <span>📊</span> 실시간 영양소 검출 결과 정리표
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">가상 실험실 진행 상태에 맞춰 실시간으로 채워집니다.</p>
+                    </div>
+                    <div class="text-xs text-blue-400 bg-blue-950/60 border border-blue-800/60 px-3 py-1.5 rounded-lg flex items-center gap-2 self-start sm:self-auto">
+                        <span>⚡</span> <span id="labProgressText">실험 진행률: 0% (0/16 반응 진행)</span>
+                    </div>
+                </div>
+
+                <!-- Dynamic Results Table -->
+                <div class="overflow-x-auto my-4 rounded-xl border border-slate-800 shadow-lg">
+                    <table class="w-full text-xs sm:text-sm text-center border-collapse">
+                        <thead class="bg-slate-900 text-slate-200 font-bold border-b border-slate-800">
+                            <tr>
+                                <th class="p-3 border-r border-slate-800 bg-slate-900/80">시약 / 시료</th>
+                                <th class="p-3 border-r border-slate-800">증류수 (6mL)</th>
+                                <th class="p-3 border-r border-slate-800">쌀음료수 (6mL)</th>
+                                <th class="p-3 border-r border-slate-800">두유 (6mL)</th>
+                                <th class="p-3">식용유 (6mL)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 bg-slate-950 text-slate-300">
+                            <tr>
+                                <td class="p-3 font-bold bg-slate-900/50 border-r border-slate-800 text-amber-400">아이오딘 반응 (녹말)</td>
+                                <td id="res-water-iodine" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-rice-iodine" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-soy-iodine" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-oil-iodine" class="p-3 text-slate-500">미실행</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold bg-slate-900/50 border-r border-slate-800 text-indigo-400">뷰렛 반응 (단백질)</td>
+                                <td id="res-water-biuret" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-rice-biuret" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-soy-biuret" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-oil-biuret" class="p-3 text-slate-500">미실행</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold bg-slate-900/50 border-r border-slate-800 text-rose-400">수단 Ⅲ 반응 (지방)</td>
+                                <td id="res-water-sudan" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-rice-sudan" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-soy-sudan" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-oil-sudan" class="p-3 text-slate-500">미실행</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold bg-slate-900/50 border-r border-slate-800 text-sky-400">베네딕트 반응 (당, 가열)</td>
+                                <td id="res-water-benedict" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-rice-benedict" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-soy-benedict" class="p-3 border-r border-slate-800 text-slate-500">미실행</td>
+                                <td id="res-oil-benedict" class="p-3 text-slate-500">미실행</td>
+                            </tr>
+                            <tr class="bg-slate-900 font-bold text-white border-t-2 border-slate-700">
+                                <td class="p-3 border-r border-slate-800 text-emerald-400">최종 확인 영양소</td>
+                                <td id="res-water-final" class="p-3 border-r border-slate-800 text-slate-400">대조군 (없음)</td>
+                                <td id="res-rice-final" class="p-3 border-r border-slate-800 text-slate-400">-</td>
+                                <td id="res-soy-final" class="p-3 border-r border-slate-800 text-slate-400">-</td>
+                                <td id="res-oil-final" class="p-3 text-slate-400">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Concept Mindmap / Diagram Visualization -->
+                <div class="mt-8 pt-6 border-t border-slate-800 space-y-4">
+                    <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                        <span>🧠</span> 영양소 - 검출 시약 - 반응 색상 마인드맵 시각화
+                    </h3>
+                    <p class="text-xs text-slate-400">각 카드를 클릭하여 검출 관계 및 핵심 개념을 확장 확인해보세요.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Starch Card -->
+                        <div onclick="highlightMindmap('starch')" class="p-4 bg-amber-950/30 border border-amber-800/50 rounded-2xl hover:border-amber-500 transition cursor-pointer group">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-amber-300 text-sm">🌾 녹말 (탄수화물)</span>
+                                <span class="text-[10px] px-2 py-0.5 bg-amber-900/60 text-amber-200 rounded-full border border-amber-700/50">청람색</span>
+                            </div>
+                            <div class="text-xs text-amber-200/80 space-y-1">
+                                <p>• <strong>검출 시약:</strong> 아이오딘-아이오딘화 칼륨</p>
+                                <p>• <strong>특징:</strong> 상온에서 즉시 청람색으로 변함</p>
+                                <p>• <strong>대표 시료:</strong> 쌀음료수, 감자, 밥</p>
+                            </div>
+                        </div>
+
+                        <!-- Protein Card -->
+                        <div onclick="highlightMindmap('protein')" class="p-4 bg-indigo-950/30 border border-indigo-800/50 rounded-2xl hover:border-indigo-500 transition cursor-pointer group">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-indigo-300 text-sm">🥩 단백질</span>
+                                <span class="text-[10px] px-2 py-0.5 bg-indigo-900/60 text-indigo-200 rounded-full border border-indigo-700/50">보라색</span>
+                            </div>
+                            <div class="text-xs text-indigo-200/80 space-y-1">
+                                <p>• <strong>검출 시약:</strong> 뷰렛 용액 (NaOH + CuSO₄)</p>
+                                <p>• <strong>특징:</strong> 구리 이온 복합체 형성으로 보라색 변화</p>
+                                <p>• <strong>대표 시료:</strong> 두유, 달걀 흰자, 우유</p>
+                            </div>
+                        </div>
+
+                        <!-- Fat Card -->
+                        <div onclick="highlightMindmap('fat')" class="p-4 bg-rose-950/30 border border-rose-800/50 rounded-2xl hover:border-rose-500 transition cursor-pointer group">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-rose-300 text-sm">🥑 지방</span>
+                                <span class="text-[10px] px-2 py-0.5 bg-rose-900/60 text-rose-200 rounded-full border border-rose-700/50">선홍색</span>
+                            </div>
+                            <div class="text-xs text-rose-200/80 space-y-1">
+                                <p>• <strong>검출 시약:</strong> 수단 Ⅲ 용액</p>
+                                <p>• <strong>특징:</strong> 지방에 선택적으로 염색되어 선홍색 층을 이룸</p>
+                                <p>• <strong>대표 시료:</strong> 식용유, 두유, 버터</p>
+                            </div>
+                        </div>
+
+                        <!-- Sugar Card -->
+                        <div onclick="highlightMindmap('sugar')" class="p-4 bg-sky-950/30 border border-sky-800/50 rounded-2xl hover:border-sky-500 transition cursor-pointer group">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-bold text-sky-300 text-sm">🍬 당 (포도당 등)</span>
+                                <span class="text-[10px] px-2 py-0.5 bg-sky-900/60 text-sky-200 rounded-full border border-sky-700/50">황적색</span>
+                            </div>
+                            <div class="text-xs text-sky-200/80 space-y-1">
+                                <p>• <strong>검출 시약:</strong> 베네딕트 용액</p>
+                                <p>• <strong>필수 조건:</strong> 🔥 80~90℃ 중탕 가열 필수</p>
+                                <p>• <strong>대표 시료:</strong> 쌀음료수, 두유, 과즙</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SECTION 3: 4-CHOICE INTERACTIVE QUIZ       -->
+        <!-- ========================================== -->
+        <section id="sec-quiz" class="hidden space-y-6">
+            <div class="bg-slate-950 rounded-2xl border border-slate-800 p-4 sm:p-6 shadow-2xl">
+                <!-- Quiz Header -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 mb-6 border-b border-slate-800 gap-3">
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                            <span>✏️</span> 영양소 검출 형성 평가 (8문항 4지선다)
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">보기(①~④)를 선택하고 즉시 정답 및 상세 해설을 확인해 보세요.</p>
+                    </div>
+                    <div id="quizScoreBadge" class="px-4 py-2 bg-emerald-950/80 text-emerald-300 border border-emerald-800 font-bold rounded-xl text-xs sm:text-sm shadow-md flex items-center gap-2">
+                        <span>🎯</span> 채점 완료: <span id="quizScoreText" class="text-emerald-400 text-sm sm:text-base font-extrabold">0</span> / 100점
+                    </div>
+                </div>
+
+                <!-- Questions List Container -->
+                <div class="space-y-6" id="quizContainer">
+                    <!-- Javascript populates 8 questions here -->
+                </div>
+
+                <!-- Grade Action Bar -->
+                <div class="mt-8 pt-6 border-t border-slate-800 flex justify-between items-center">
+                    <button onclick="resetQuiz()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold rounded-xl border border-slate-700 transition text-xs sm:text-sm">
+                        🔄 퀴즈 다시 풀기
+                    </button>
+                    <button onclick="gradeAllQuiz()" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95 text-xs sm:text-sm flex items-center gap-2">
+                        <span>✅</span> 전체 종합 채점하기
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div>중2 과학 5. 동물과 에너지 | 영양소 검출 가상 실험실 및 형성평가</div>
+            <div>Designed for Interactive Science Learning &bull; Pure JS & Canvas 2D</div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- 1. WEB AUDIO API SOUND SYNTHESIZER ---
+        const Sound = {
+            enabled: true,
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+            },
+            play(type) {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                if (type === 'drop') {
+                    // Dropper liquid sound (two quick droplets)
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(900, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now); osc.stop(now + 0.08);
+
+                    setTimeout(() => {
+                        if (!this.ctx) return;
+                        const osc2 = this.ctx.createOscillator();
+                        const gain2 = this.ctx.createGain();
+                        osc2.connect(gain2); gain2.connect(this.ctx.destination);
+                        osc2.type = 'sine';
+                        osc2.frequency.setValueAtTime(1000, this.ctx.currentTime);
+                        osc2.frequency.exponentialRampToValueAtTime(350, this.ctx.currentTime + 0.08);
+                        gain2.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                        gain2.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                        osc2.start(this.ctx.currentTime); osc2.stop(this.ctx.currentTime + 0.08);
+                    }, 120);
+                } else if (type === 'click') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.04);
+                    osc.start(now); osc.stop(now + 0.04);
+                } else if (type === 'success') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now); osc.stop(now + 0.35);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.setValueAtTime(170, now + 0.12);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now); osc.stop(now + 0.25);
+                } else if (type === 'bubble') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300 + Math.random() * 250, now);
+                    osc.frequency.exponentialRampToValueAtTime(700 + Math.random() * 200, now + 0.05);
+                    gain.gain.setValueAtTime(0.04, now);
+                    gain.gain.linearRampToValueAtTime(0.005, now + 0.05);
+                    osc.start(now); osc.stop(now + 0.05);
+                }
+            }
+        };
+
+        function toggleSound() {
+            Sound.enabled = !Sound.enabled;
+            if (Sound.enabled) Sound.init();
+            document.getElementById('soundIcon').textContent = Sound.enabled ? '🔊' : '🔇';
+            document.getElementById('soundText').textContent = Sound.enabled ? '사운드 ON' : '사운드 OFF';
+        }
+
+        // --- 2. QUIZ DATA (8 Questions, All 4-Choice) ---
+        const QUESTIONS = [
+            {
+                id: 1,
+                title: '1. 영양소와 이를 검출하기 위한 시약, 그리고 양성 반응 시의 색상 변화가 올바르게 짝지어진 것은?',
+                options: [
+                    '① 녹말 - 베네딕트 용액 - 청람색',
+                    '② 단백질 - 수단 Ⅲ 용액 - 보라색',
+                    '③ 지방 - 뷰렛 용액 - 선홍색',
+                    '④ 당 - 베네딕트 용액 - 황적색 (가열)'
+                ],
+                answer: 3,
+                explanation: '당은 베네딕트 용액과 반응하여 가열 시 황적색으로 변합니다. (녹말: 아이오딘-청람색, 단백질: 뷰렛-보라색, 지방: 수단Ⅲ-선홍색)'
+            },
+            {
+                id: 2,
+                title: '2. 베네딕트 용액을 사용하여 음식물 속 당(포도당 등)을 검출할 때 반드시 갖추어야 할 가열 조건으로 가장 적절한 것은?',
+                options: [
+                    '① 시험관을 얼음물에 넣어 0℃ 이하로 급냉한다.',
+                    '② 80℃ ~ 90℃의 따뜻한 물이 담긴 비커에 시험관을 넣고 중탕 가열한다.',
+                    '③ 알코올램프의 겉불꽃에 시험관을 직접 대고 100℃ 이상 끓인다.',
+                    '④ 시약을 첨가한 직후 상자에 넣어 실온(20℃)에서 빛을 차단한다.'
+                ],
+                answer: 1,
+                explanation: '베네딕트 반응은 실온에서 상온 반응 속도가 매우 느리므로 80℃~90℃의 따뜻한 물에 중탕 가열해야 빠르게 황적색으로 변합니다.'
+            },
+            {
+                id: 3,
+                title: '3. 영양소 검출 실험 시 쌀음료수, 두유, 식용유 외에 아무런 영양소가 들어 있지 않은 \'증류수\'를 실험에 포함하는 주된 목적은 무엇인가?',
+                options: [
+                    '① 시약의 화학 반응 속도를 연쇄적으로 촉진하기 위해',
+                    '② 반응 색 변화 비교의 기준이 되는 \'대조군\'으로서 시약 원래 색을 확인하기 위해',
+                    '③ 시험관 내 불순물을 정화하여 투명도를 높이기 위해',
+                    '④ 영양소의 분해 작용을 멈추게 하는 반응 중단제 역할'
+                ],
+                answer: 1,
+                explanation: '증류수는 영양소가 포함되어 있지 않은 대조군(Control group)으로 활용되어, 시약 본래의 색을 확인하고 색 변화 유무 판단의 기준이 됩니다.'
+            },
+            {
+                id: 4,
+                title: '4. 녹말, 단백질, 지방 검출 실험 시 일반 시험관 대신 \'12홈판\'을 활용할 때 얻을 수 있는 장점으로 가장 적절한 것은?',
+                options: [
+                    '① 시료 가열 시 용액이 외부에 튀는 것을 완전 방지한다.',
+                    '② 적은 양의 시료와 시약만으로 여러 검출 반응을 한눈에 동시에 비교할 수 있다.',
+                    '③ 시약의 산화를 막아 반응 결과색을 반평생 보존해 준다.',
+                    '④ 음식물 속 영양소를 스스로 정제 분해하여 반응을 유도한다.'
+                ],
+                answer: 1,
+                explanation: '12홈판은 격자 홈 구조를 가지고 있어 적은 시료와 시약 용량으로 많은 비교 실험군을 한 화면에서 즉시 대조 관찰하기에 매우 효율적입니다.'
+            },
+            {
+                id: 5,
+                title: '5. 두유 시료에 각각의 시약을 넣었더니 [뷰렛 반응: 보라색], [수단 Ⅲ 반응: 선홍색], [베네딕트 반응: 황적색]이 관찰되었습니다. 두유에 들어 있는 영양소의 조합은?',
+                options: [
+                    '① 녹말, 단백질',
+                    '② 단백질, 지방',
+                    '③ 지방, 당, 녹말',
+                    '④ 단백질, 지방, 당'
+                ],
+                answer: 3,
+                explanation: '뷰렛 반응(보라색) = 단백질, 수단 Ⅲ 반응(선홍색) = 지방, 베네딕트 반응(황적색) = 당이 각각 검출되었습니다.'
+            },
+            {
+                id: 6,
+                title: '6. 미지의 시료 A, B가 있습니다. A는 수단 Ⅲ 반응에서만 선홍색이 나왔고, B는 아이오딘 반응(청람색)과 베네딕트 반응(황적색)이 나타났습니다. A와 B 시료는 각각 무엇인가?',
+                options: [
+                    '① A: 쌀음료수, B: 두유',
+                    '② A: 식용유, B: 쌀음료수',
+                    '③ A: 두유, B: 식용유',
+                    '④ A: 식용유, B: 두유'
+                ],
+                answer: 1,
+                explanation: 'A는 지방만 포함하므로 식용유, B는 녹말과 당을 함유하므로 쌀음료수입니다.'
+            },
+            {
+                id: 7,
+                title: '7. 삶은 달걀 흰자를 잘게 으깨어 시약 검출을 진행하려 합니다. 달걀 흰자에 풍부하게 들어 있는 영양소와 이를 검출하기 위한 시약의 짝으로 알맞은 것은?',
+                options: [
+                    '① 녹말 - 아이오딘-아이오딘화 칼륨 용액',
+                    '② 단백질 - 뷰렛 용액 (5% NaOH + 1% CuSO₄)',
+                    '③ 지방 - 수단 Ⅲ 용액',
+                    '④ 당 - 베네딕트 용액'
+                ],
+                answer: 1,
+                explanation: '달걀 흰자의 주성분은 단백질이므로 뷰렛 용액을 떨어뜨려 보라색 반응을 관찰해야 합니다.'
+            },
+            {
+                id: 8,
+                title: '8. 미지의 시료 X에 아이오딘 용액과 뷰렛 용액을 넣었더니 두 반응 모두에서 양성 반응이 나왔습니다. 시료 X에 포함된 영양소 중 인체에서 \'주된 에너지원\'으로 사용되는 영양소는?',
+                options: [
+                    '① 뷰렛 반응으로 검출된 단백질',
+                    '② 아이오딘 반응으로 검출된 녹말 (탄수화물)',
+                    '③ 수단 Ⅲ 반응으로 검출되는 지방',
+                    '④ 두 영양소 모두 에너지를 내지 못한다.'
+                ],
+                answer: 1,
+                explanation: '시료 X에는 녹말(탄수화물)과 단백질이 포함되어 있으며, 이 중 탄수화물(녹말)이 체내에서 1g당 4kcal의 에너지를 내는 가장 주요하고 우선적인 에너지원입니다.'
+            }
+        ];
+
+        // --- 3. VIRTUAL SIMULATOR STATE & CANVAS ANIMATION SYSTEM ---
+        const SAMPLES = [
+            { id: 'water', name: '증류수', color: [220, 235, 245] },
+            { id: 'rice', name: '쌀음료수', color: [240, 240, 228] },
+            { id: 'soy', name: '두유', color: [238, 220, 178] },
+            { id: 'oil', name: '식용유', color: [235, 210, 90] }
+        ];
+
+        const REACTION_COLORS = {
+            starch: [30, 40, 130],    // 청람색
+            protein: [145, 45, 225],  // 보라색
+            fat: [240, 45, 65],       // 선홍색
+            sugar: [225, 80, 20]      // 황적색
+        };
+
+        let simState = {
+            step: 1, // 1: 12-well plate, 2: test tubes
+            activeReagent: null,
+            wells: [],
+            tubes: [],
+            isHeating: false,
+            heatProgress: 0,
+            dropperAnim: null, // { active: bool, x, y, targetX, targetY, reagent, dropsCount, progress }
+            bubbles: [],
+            step1Complete: false,
+            step2Complete: false
+        };
+
+        function initSimData() {
+            simState.wells = [];
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 4; c++) {
+                    const reagentType = r === 0 ? 'iodine' : (r === 1 ? 'biuret' : 'sudan');
+                    simState.wells.push({
+                        row: r, col: c,
+                        sample: SAMPLES[c],
+                        targetReagent: reagentType,
+                        addedReagent: null,
+                        color: [...SAMPLES[c].color],
+                        targetColor: [...SAMPLES[c].color],
+                        progress: 1
+                    });
+                }
+            }
+
+            simState.tubes = [];
+            for (let i = 0; i < 4; i++) {
+                simState.tubes.push({
+                    idx: i,
+                    sample: SAMPLES[i],
+                    addedBenedict: false,
+                    color: [...SAMPLES[i].color],
+                    targetColor: [...SAMPLES[i].color],
+                    progress: 1
+                });
+            }
+
+            simState.bubbles = [];
+            for (let b = 0; b < 28; b++) {
+                simState.bubbles.push({
+                    x: Math.random(),
+                    y: Math.random(),
+                    size: 2 + Math.random() * 4,
+                    speed: 0.006 + Math.random() * 0.012
+                });
+            }
+
+            simState.dropperAnim = { active: false };
+        }
+
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        function selectReagent(r) {
+            Sound.play('click');
+            simState.activeReagent = r;
+
+            document.querySelectorAll('.reagent-btn').forEach(b => {
+                b.classList.remove('ring-2', 'ring-blue-500', 'border-blue-400');
+            });
+            const btn = document.getElementById(`btn-${r}`);
+            if (btn) btn.classList.add('ring-2', 'ring-blue-500', 'border-blue-400');
+
+            const names = {
+                iodine: '아이오딘 용액 선택됨',
+                biuret: '뷰렛 용액 선택됨',
+                sudan: '수단 Ⅲ 용액 선택됨',
+                benedict: '베네딕트 용액 선택됨'
+            };
+            document.getElementById('selectedReagentBadge').textContent = names[r] || '선택 안 됨';
+        }
+
+        // Canvas Interactive Precision Click & Touch Calibration
+        function handleCanvasPointer(e) {
+            if (simState.dropperAnim.active) return; // Ignore while animating
+            if (!simState.activeReagent) {
+                showToast('⚠️ 먼저 우측 시약 목록에서 첨가할 시약을 선택하세요!');
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            const w = rect.width;
+            const h = rect.height;
+
+            if (simState.step === 1) {
+                const cellW = (w - 70) / 4;
+                const cellH = (h - 70) / 3;
+
+                simState.wells.forEach(well => {
+                    const wx = 55 + well.col * cellW + cellW / 2;
+                    const wy = 40 + well.row * cellH + cellH / 2;
+                    const dist = Math.hypot(x - wx, y - wy);
+
+                    if (dist < cellW * 0.42) {
+                        if (well.addedReagent) {
+                            showToast("이미 이 홈에는 시약이 첨가되었습니다.");
+                            return;
+                        }
+                        if (well.targetReagent !== simState.activeReagent) {
+                            showToast("⚠️ 해당 행의 시약 종류와 선택한 시약이 일치하지 않습니다.");
+                            return;
+                        }
+
+                        // Trigger Dropper Animation Sequence
+                        triggerDropperAnim(wx, wy, () => {
+                            well.addedReagent = simState.activeReagent;
+                            well.targetColor = getReactionColor(well.sample.id, simState.activeReagent);
+                            well.progress = 0;
+                            updateRealtimeResults();
+                            checkStep1Status();
+                        });
+                    }
+                });
+            } else if (simState.step === 2) {
+                const tubeW = Math.min(46, w * 0.1);
+                const gap = (w - 120 - 4 * tubeW) / 3;
+
+                simState.tubes.forEach((tube, i) => {
+                    const tx = 60 + i * (tubeW + gap) + tubeW / 2;
+                    const tubeTop = h * 0.22;
+                    const tubeBottom = h * 0.78;
+
+                    if (x >= tx - tubeW && x <= tx + tubeW && y >= tubeTop && y <= tubeBottom) {
+                        if (simState.activeReagent !== 'benedict') {
+                            showToast("⚠️ 당 검출을 위해 '베네딕트 용액'을 선택해주세요.");
+                            return;
+                        }
+                        if (tube.addedBenedict) {
+                            showToast("이미 이 시험관에 베네딕트 용액을 넣었습니다.");
+                            return;
+                        }
+
+                        triggerDropperAnim(tx, tubeTop + 20, () => {
+                            tube.addedBenedict = true;
+                            // Initial mixture color (Sky Blue)
+                            tube.targetColor = [130, 195, 255];
+                            tube.progress = 0;
+                            updateRealtimeResults();
+                            checkStep2Status();
+                        });
+                    }
+                });
+            }
+        }
+
+        canvas.addEventListener('click', handleCanvasPointer);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleCanvasPointer(e);
+        }, { passive: false });
+
+        // Dropper Animation Trigger
+        function triggerDropperAnim(targetX, targetY, callback) {
+            simState.dropperAnim = {
+                active: true,
+                startX: targetX + 80,
+                startY: targetY - 120,
+                x: targetX + 80,
+                y: targetY - 120,
+                targetX: targetX,
+                targetY: targetY - 35,
+                progress: 0,
+                dropY: 0,
+                callback: callback
+            };
+        }
+
+        function getReactionColor(sampleId, reagent) {
+            if (sampleId === 'rice') {
+                if (reagent === 'iodine') return REACTION_COLORS.starch;
+                if (reagent === 'benedict') return REACTION_COLORS.sugar;
+            }
+            if (sampleId === 'soy') {
+                if (reagent === 'biuret') return REACTION_COLORS.protein;
+                if (reagent === 'sudan') return REACTION_COLORS.fat;
+                if (reagent === 'benedict') return REACTION_COLORS.sugar;
+            }
+            if (sampleId === 'oil') {
+                if (reagent === 'sudan') return REACTION_COLORS.fat;
+            }
+            // Unreacted Blend Color
+            if (reagent === 'iodine') return [185, 110, 25];
+            if (reagent === 'biuret') return [110, 155, 240];
+            if (reagent === 'sudan') return [235, 90, 90];
+            return [130, 195, 255];
+        }
+
+        function checkStep1Status() {
+            const count = simState.wells.filter(w => w.addedReagent !== null).length;
+            if (count === 12 && !simState.step1Complete) {
+                simState.step1Complete = true;
+                Sound.play('success');
+                showToast("🎉 12홈판 반응 관찰 완료! [2단계 진행] 버튼을 누르세요.");
+                const btn = document.getElementById('simStepBtn');
+                btn.disabled = false;
+                btn.classList.remove('bg-slate-800', 'text-slate-500', 'cursor-not-allowed');
+                btn.classList.add('bg-gradient-to-r', 'from-blue-600', 'to-indigo-600', 'text-white', 'hover:from-blue-500', 'hover:to-indigo-500', 'pulse-glow');
+            }
+        }
+
+        function checkStep2Status() {
+            const count = simState.tubes.filter(t => t.addedBenedict).length;
+            if (count === 4) {
+                document.getElementById('simHeatBtn').classList.remove('hidden');
+                document.getElementById('simInstruction').textContent = "모든 시험관에 베네딕트 용액 주입 완료! 하단 [🔥 80~90℃ 중탕 가열 시작] 버튼을 클릭하세요.";
+                showToast("🔥 베네딕트 용액 주입 완료! 중탕 가열을 시작하세요.");
+            }
+        }
+
+        function triggerHeating() {
+            if (simState.isHeating) return;
+            simState.isHeating = true;
+            document.getElementById('simHeatBtn').classList.add('hidden');
+            showToast("🔥 80~90℃ 중탕 가열 중... 당 반응을 관찰하세요.");
+
+            let bubbleTimer = setInterval(() => {
+                if (simState.isHeating) Sound.play('bubble');
+            }, 200);
+
+            simState.tubes.forEach(tube => {
+                tube.targetColor = getReactionColor(tube.sample.id, 'benedict');
+                tube.progress = 0;
+            });
+
+            setTimeout(() => {
+                clearInterval(bubbleTimer);
+                simState.isHeating = false;
+                simState.step2Complete = true;
+                Sound.play('success');
+                updateRealtimeResults();
+                showToast("🎉 베네딕트 가열 실험 완료! 쌀음료수와 두유의 황적색 변화를 확인해보세요.");
+                document.getElementById('simInstruction').textContent = "모든 가열 실험이 완료되었습니다. [📊 결과 정리] 탭에서 전체 종합표를 확인하세요!";
+            }, 3600);
+        }
+
+        function nextSimulationStep() {
+            simState.step = 2;
+            simState.activeReagent = null;
+            document.querySelectorAll('.reagent-btn').forEach(b => b.classList.remove('ring-2', 'ring-blue-500', 'border-blue-400'));
+            document.getElementById('selectedReagentBadge').textContent = '선택 안 됨';
+
+            const btn = document.getElementById('simStepBtn');
+            btn.disabled = true;
+            btn.classList.add('bg-slate-800', 'text-slate-500', 'cursor-not-allowed');
+            btn.classList.remove('bg-gradient-to-r', 'from-blue-600', 'to-indigo-600', 'text-white', 'pulse-glow');
+
+            document.getElementById('stepBadge').textContent = "2단계: 베네딕트 중탕 가열";
+            document.getElementById('stepBadge').className = "px-2.5 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold rounded-full";
+            document.getElementById('stepDescription').textContent = "우측에서 베네딕트 용액을 선택하여 각 시험관에 주입한 후 중탕 가열하세요.";
+            document.getElementById('simInstruction').textContent = "[2단계] 우측 시약 중 '베네딕트 용액'을 클릭한 후 4개 시험관을 각각 터치/클릭하세요.";
+
+            showToast("2단계 베네딕트 중탕 가열 실험 진입!");
+        }
+
+        function resetCurrentSimStep() {
+            if (simState.step === 1) {
+                simState.wells.forEach(w => {
+                    w.addedReagent = null;
+                    w.color = [...w.sample.color];
+                    w.targetColor = [...w.sample.color];
+                    w.progress = 1;
+                });
+                simState.step1Complete = false;
+                const btn = document.getElementById('simStepBtn');
+                btn.disabled = true;
+                btn.classList.add('bg-slate-800', 'text-slate-500', 'cursor-not-allowed');
+                btn.classList.remove('bg-gradient-to-r', 'from-blue-600', 'to-indigo-600', 'text-white', 'pulse-glow');
+            } else {
+                simState.tubes.forEach(t => {
+                    t.addedBenedict = false;
+                    t.color = [...t.sample.color];
+                    t.targetColor = [...t.sample.color];
+                    t.progress = 1;
+                });
+                simState.isHeating = false;
+                simState.step2Complete = false;
+                document.getElementById('simHeatBtn').classList.add('hidden');
+            }
+            updateRealtimeResults();
+            showToast("현재 단계 실험이 초기화되었습니다.");
+        }
+
+        function globalResetAll() {
+            Sound.play('click');
+            simState.step = 1;
+            simState.activeReagent = null;
+            simState.step1Complete = false;
+            simState.step2Complete = false;
+            simState.isHeating = false;
+            initSimData();
+
+            document.querySelectorAll('.reagent-btn').forEach(b => b.classList.remove('ring-2', 'ring-blue-500', 'border-blue-400'));
+            document.getElementById('selectedReagentBadge').textContent = '선택 안 됨';
+            document.getElementById('simHeatBtn').classList.add('hidden');
+
+            const btn = document.getElementById('simStepBtn');
+            btn.disabled = true;
+            btn.classList.add('bg-slate-800', 'text-slate-500', 'cursor-not-allowed');
+            btn.classList.remove('bg-gradient-to-r', 'from-blue-600', 'to-indigo-600', 'text-white', 'pulse-glow');
+
+            document.getElementById('stepBadge').textContent = "1단계: 12홈판 시약 반응";
+            document.getElementById('stepBadge').className = "px-2.5 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-bold rounded-full";
+            document.getElementById('stepDescription').textContent = "우측 시약을 선택한 후 홈판의 해당 행을 터치/클릭하여 시약 반응을 관찰하세요.";
+            document.getElementById('simInstruction').textContent = "[1단계] 시약을 클릭하여 선택한 후, 12홈판의 해당하는 행의 홈을 클릭하면 스포이트 애니메이션이 작동합니다.";
+
+            updateRealtimeResults();
+            showToast("전체 가상 실험이 완전히 초기화되었습니다.");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('simToast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2600);
+        }
+
+        // --- 4. CANVAS ANIMATION & RENDER ENGINE ---
+        function renderLoop() {
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            const h = canvas.height / (window.devicePixelRatio || 1);
+
+            ctx.clearRect(0, 0, w, h);
+
+            if (simState.step === 1) {
+                // Background & Plate Grid Frame
+                ctx.fillStyle = '#090d16';
+                ctx.fillRect(0, 0, w, h);
+
+                // Plate Board Base
+                const boardX = 25;
+                const boardY = 15;
+                const boardW = w - 50;
+                const boardH = h - 30;
+
+                ctx.fillStyle = '#1e293b';
+                ctx.roundRect(boardX, boardY, boardW, boardH, 16);
+                ctx.fill();
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                const cellW = (w - 70) / 4;
+                const cellH = (h - 70) / 3;
+
+                // Column Titles (Samples)
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = 'bold 12px Noto Sans KR';
+                ctx.textAlign = 'center';
+                SAMPLES.forEach((s, idx) => {
+                    ctx.fillText(s.name, 55 + idx * cellW + cellW / 2, 32);
+                });
+
+                // Row Titles (Reagents)
+                const rowTitles = ['① 아이오딘', '② 뷰렛용액', '③ 수단 Ⅲ'];
+                ctx.font = '500 11px Noto Sans KR';
+                ctx.fillStyle = '#64748b';
+                ctx.textAlign = 'left';
+                rowTitles.forEach((title, idx) => {
+                    ctx.fillText(title, 32, 45 + idx * cellH + cellH / 2);
+                });
+
+                // Render 12 Wells
+                simState.wells.forEach(well => {
+                    const wx = 55 + well.col * cellW + cellW / 2;
+                    const wy = 40 + well.row * cellH + cellH / 2;
+                    const r = Math.min(cellW, cellH) * 0.36;
+
+                    // Color transition lerp
+                    if (well.progress < 1) {
+                        well.progress += 0.04;
+                        well.color = well.color.map((c, i) => c + (well.targetColor[i] - c) * 0.12);
+                    }
+
+                    // Outer Well Rim Shadow
+                    ctx.beginPath();
+                    ctx.arc(wx, wy, r + 2, 0, Math.PI * 2);
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fill();
+
+                    // Liquid Content
+                    ctx.beginPath();
+                    ctx.arc(wx, wy, r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgb(${well.color.map(Math.round).join(',')})`;
+                    ctx.fill();
+                    ctx.strokeStyle = '#475569';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    // Highlight Reflection
+                    ctx.beginPath();
+                    ctx.arc(wx - r * 0.3, wy - r * 0.3, r * 0.25, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+                    ctx.fill();
+                });
+            } else {
+                // Step 2: Test Tubes & Warm Water Bath Beaker
+                ctx.fillStyle = '#050811';
+                ctx.fillRect(0, 0, w, h);
+
+                const beakerX = 40;
+                const beakerY = h * 0.25;
+                const beakerW = w - 80;
+                const beakerH = h * 0.62;
+
+                // Beaker Glass Water Fill
+                ctx.fillStyle = 'rgba(14, 165, 233, 0.12)';
+                ctx.fillRect(beakerX, beakerY, beakerW, beakerH);
+                ctx.strokeStyle = '#0284c7';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(beakerX, beakerY, beakerW, beakerH);
+
+                // Thermometer Visual Graphic
+                const thermX = beakerX + beakerW - 35;
+                ctx.fillStyle = '#334155';
+                ctx.fillRect(thermX, beakerY - 20, 8, beakerH * 0.7);
+                ctx.fillStyle = '#ef4444'; // Red liquid line
+                const tempHeight = simState.isHeating ? beakerH * 0.5 : beakerH * 0.2;
+                ctx.fillRect(thermX + 2, beakerY + beakerH * 0.5 - tempHeight, 4, tempHeight);
+                ctx.font = 'bold 11px Noto Sans KR';
+                ctx.fillStyle = simState.isHeating ? '#f87171' : '#38bdf8';
+                ctx.textAlign = 'right';
+                ctx.fillText(simState.isHeating ? '85℃ (가열중)' : '25℃ (상온)', thermX - 6, beakerY + 10);
+
+                // Test Tubes Rendering
+                const tubeW = Math.min(46, w * 0.1);
+                const gap = (w - 120 - 4 * tubeW) / 3;
+
+                simState.tubes.forEach((tube, i) => {
+                    const tx = 60 + i * (tubeW + gap);
+
+                    if (tube.progress < 1) {
+                        tube.progress += 0.03;
+                        tube.color = tube.color.map((c, idx) => c + (tube.targetColor[idx] - c) * 0.08);
+                    }
+
+                    // Liquid contents inside test tube
+                    ctx.fillStyle = `rgb(${tube.color.map(Math.round).join(',')})`;
+                    ctx.fillRect(tx + 3, h * 0.32, tubeW - 6, h * 0.42);
+
+                    // Test Tube Glass Frame
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.lineWidth = 2.5;
+                    ctx.strokeRect(tx, h * 0.18, tubeW, h * 0.58);
+
+                    // Tube Lip
+                    ctx.strokeRect(tx - 3, h * 0.18, tubeW + 6, 4);
+
+                    // Sample Name Label
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.font = 'bold 11px Noto Sans KR';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(tube.sample.name, tx + tubeW / 2, h * 0.84);
+                });
+
+                // Bubbles Animation when Heating
+                if (simState.isHeating) {
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+                    ctx.fillRect(beakerX, beakerY + beakerH - 20, beakerW, 20);
+
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+                    simState.bubbles.forEach(b => {
+                        b.y -= b.speed;
+                        if (b.y < 0.2) b.y = 0.85;
+                        const bx = beakerX + b.x * beakerW;
+                        const by = beakerY + b.y * beakerH;
+                        ctx.beginPath();
+                        ctx.arc(bx, by, b.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                }
+            }
+
+            // Render Dropper Droplet Animation Sequence
+            if (simState.dropperAnim.active) {
+                const anim = simState.dropperAnim;
+                if (anim.progress < 0.4) {
+                    // Phase 1: Dropper moves to target position
+                    anim.progress += 0.035;
+                    anim.x = anim.startX + (anim.targetX - anim.startX) * (anim.progress / 0.4);
+                    anim.y = anim.startY + (anim.targetY - anim.startY) * (anim.progress / 0.4);
+                } else if (anim.progress < 0.8) {
+                    // Phase 2: Droplet falls
+                    anim.progress += 0.025;
+                    anim.dropY = (anim.progress - 0.4) * 120;
+                    if (anim.progress >= 0.78 && !anim.soundPlayed) {
+                        Sound.play('drop');
+                        anim.soundPlayed = true;
+                    }
+                } else {
+                    // Phase 3: Dropper returns and finishes
+                    anim.dropperFinished = true;
+                    if (anim.callback) anim.callback();
+                    simState.dropperAnim.active = false;
+                }
+
+                // Draw Dropper Body Graphic
+                ctx.save();
+                ctx.translate(anim.x, anim.y);
+
+                // Bulb
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(-6, -20, 12, 14);
+                // Glass Pipette Body
+                ctx.fillStyle = 'rgba(241, 245, 249, 0.85)';
+                ctx.fillRect(-3, -6, 6, 25);
+                ctx.beginPath();
+                ctx.moveTo(-3, 19);
+                ctx.lineTo(0, 26);
+                ctx.lineTo(3, 19);
+                ctx.closePath();
+                ctx.fill();
+
+                // Falling Liquid Droplet
+                if (anim.progress >= 0.4 && anim.progress < 0.8) {
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.beginPath();
+                    ctx.arc(0, 26 + anim.dropY, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        // --- 5. REAL-TIME RESULTS TABLE UPDATER ---
+        function updateRealtimeResults() {
+            let completedCount = 0;
+
+            // 12 Wells Status
+            simState.wells.forEach(w => {
+                const cellId = `res-${w.sample.id}-${w.targetReagent}`;
+                const elem = document.getElementById(cellId);
+                if (elem) {
+                    if (w.addedReagent) {
+                        completedCount++;
+                        const isPositive = (w.sample.id === 'rice' && w.targetReagent === 'iodine') ||
+                                           (w.sample.id === 'soy' && (w.targetReagent === 'biuret' || w.targetReagent === 'sudan')) ||
+                                           (w.sample.id === 'oil' && w.targetReagent === 'sudan');
+
+                        if (isPositive) {
+                            const colors = {
+                                iodine: 'text-amber-400 font-bold bg-amber-950/40',
+                                biuret: 'text-indigo-400 font-bold bg-indigo-950/40',
+                                sudan: 'text-rose-400 font-bold bg-rose-950/40'
+                            };
+                            const labels = { iodine: '청람색 (+)', biuret: '보라색 (+)', sudan: '선홍색 (+)' };
+                            elem.className = `p-3 border-r border-slate-800 ${colors[w.targetReagent]}`;
+                            elem.textContent = labels[w.targetReagent];
+                        } else {
+                            elem.className = 'p-3 border-r border-slate-800 text-slate-400';
+                            elem.textContent = '변화없음 (-)';
+                        }
+                    }
+                }
+            });
+
+            // Test Tubes Benedict Status
+            simState.tubes.forEach(t => {
+                const cellId = `res-${t.sample.id}-benedict`;
+                const elem = document.getElementById(cellId);
+                if (elem) {
+                    if (t.addedBenedict) {
+                        completedCount++;
+                        if (simState.step2Complete) {
+                            const isPositive = (t.sample.id === 'rice' || t.sample.id === 'soy');
+                            if (isPositive) {
+                                elem.className = 'p-3 border-r border-slate-800 text-sky-400 font-bold bg-sky-950/40';
+                                elem.textContent = '황적색 (+가열)';
+                            } else {
+                                elem.className = 'p-3 border-r border-slate-800 text-slate-400';
+                                elem.textContent = '변화없음 (-)';
+                            }
+                        } else {
+                            elem.className = 'p-3 border-r border-slate-800 text-sky-300/60 italic';
+                            elem.textContent = '가열 대기중';
+                        }
+                    }
+                }
+            });
+
+            // Progress text
+            const pct = Math.round((completedCount / 16) * 100);
+            document.getElementById('labProgressText').textContent = `실험 진행률: ${pct}% (${completedCount}/16 반응 완료)`;
+
+            // Final Summary Row
+            if (simState.step1Complete) {
+                document.getElementById('res-rice-final').textContent = '녹말';
+                document.getElementById('res-soy-final').textContent = '단백질, 지방';
+                document.getElementById('res-oil-final').textContent = '지방';
+            }
+            if (simState.step2Complete) {
+                document.getElementById('res-rice-final').textContent = '녹말, 당';
+                document.getElementById('res-soy-final').textContent = '단백질, 지방, 당';
+            }
+        }
+
+        function highlightMindmap(nutrient) {
+            Sound.play('click');
+            const toastMap = {
+                starch: '🌾 녹말: 아이오딘-아이오딘화 칼륨 용액과 반응하여 청람색으로 변함.',
+                protein: '🥩 단백질: 뷰렛 용액(NaOH+CuSO₄)과 반응하여 보라색으로 변함.',
+                fat: '🥑 지방: 수단 Ⅲ 용액과 반응하여 선홍색으로 변함.',
+                sugar: '🍬 당: 베네딕트 용액을 넣고 80~90℃ 중탕 가열 시 황적색으로 변함.'
+            };
+            showToast(toastMap[nutrient] || '');
+        }
+
+        // --- 6. INTERACTIVE QUIZ RENDER & IMMEDIATE SCORING ENGINE ---
+        function renderQuiz() {
+            const container = document.getElementById('quizContainer');
+            container.innerHTML = '';
+
+            QUESTIONS.forEach((q, idx) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'p-4 sm:p-5 bg-slate-900 rounded-2xl border border-slate-800 space-y-3 shadow-md';
+
+                const optionsHtml = q.options.map((opt, oIdx) => `
+                    <label class="option-card flex items-center gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-blue-500/60 cursor-pointer text-xs sm:text-sm text-slate-200 shadow-sm transition">
+                        <input type="radio" name="quiz-q-${q.id}" value="${oIdx}" onchange="checkQuestionImmediate(${q.id}, ${oIdx})" class="w-4 h-4 text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
+                        <span>${opt}</span>
+                    </label>
+                `).join('');
+
+                qDiv.innerHTML = `
+                    <div class="font-bold text-white text-sm sm:text-base leading-relaxed flex items-start gap-2">
+                        <span>${q.title}</span>
+                    </div>
+                    <div class="space-y-2 mt-2">
+                        ${optionsHtml}
+                    </div>
+                    <div id="feedback-q-${q.id}" class="hidden mt-3 p-3.5 rounded-xl text-xs sm:text-sm leading-relaxed font-medium transition-all"></div>
+                `;
+                container.appendChild(qDiv);
+            });
+        }
+
+        function checkQuestionImmediate(qId, selectedIdx) {
+            const q = QUESTIONS.find(item => item.id === qId);
+            if (!q) return;
+
+            const feedback = document.getElementById(`feedback-q-${qId}`);
+            feedback.classList.remove('hidden', 'bg-emerald-950/80', 'text-emerald-200', 'border-emerald-800', 'bg-rose-950/80', 'text-rose-200', 'border-rose-800');
+
+            if (selectedIdx === q.answer) {
+                Sound.play('success');
+                feedback.classList.add('bg-emerald-950/80', 'text-emerald-200', 'border', 'border-emerald-800/80');
+                feedback.innerHTML = `<strong>⭕ 정답입니다!</strong><br><span class="mt-1 block text-emerald-300/90 text-xs">${q.explanation}</span>`;
+            } else {
+                Sound.play('wrong');
+                feedback.classList.add('bg-rose-950/80', 'text-rose-200', 'border', 'border-rose-800/80');
+                feedback.innerHTML = `<strong>❌ 오답입니다.</strong> (정답: ${q.options[q.answer].charAt(0)})<br><span class="mt-1 block text-rose-300/90 text-xs">${q.explanation}</span>`;
+            }
+        }
+
+        function gradeAllQuiz() {
+            let score = 0;
+            let answeredCount = 0;
+
+            QUESTIONS.forEach(q => {
+                const selected = document.querySelector(`input[name="quiz-q-${q.id}"]:checked`);
+                if (selected) {
+                    answeredCount++;
+                    if (parseInt(selected.value) === q.answer) {
+                        score += 12.5;
+                    }
+                }
+            });
+
+            const finalScore = Math.round(score);
+            document.getElementById('quizScoreText').textContent = finalScore;
+
+            if (finalScore >= 80) {
+                Sound.play('success');
+            } else {
+                Sound.play('wrong');
+            }
+
+            if (answeredCount < 8) {
+                showToast(`⚠️ 총 8문항 중 ${answeredCount}문항에 답변하셨습니다. 모두 풀고 채점해 보세요.`);
+            } else {
+                showToast(`🎉 전체 채점 완료! 총점: ${finalScore} / 100점`);
+            }
+        }
+
+        function resetQuiz() {
+            Sound.play('click');
+            renderQuiz();
+            document.getElementById('quizScoreText').textContent = '0';
+            showToast("퀴즈 답변이 초기화되었습니다.");
+        }
+
+        // --- 7. TAB NAVIGATION LOGIC ---
+        function switchTab(tab) {
+            Sound.play('click');
+            document.getElementById('sec-sim').classList.add('hidden');
+            document.getElementById('sec-result').classList.add('hidden');
+            document.getElementById('sec-quiz').classList.add('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                b.classList.add('text-slate-400', 'hover:text-white', 'hover:bg-slate-800');
+            });
+
+            document.getElementById(`sec-${tab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+            activeBtn.classList.remove('text-slate-400', 'hover:text-white', 'hover:bg-slate-800');
+
+            if (tab === 'sim') {
+                setTimeout(resizeCanvas, 50);
+            }
+        }
+
+        // INITIALIZATION
+        window.addEventListener('load', () => {
+            initSimData();
+            resizeCanvas();
+            renderQuiz();
+            updateRealtimeResults();
+            requestAnimationFrame(renderLoop);
+        });
+    </script>
+</body>
+</html>
