@@ -503,8 +503,9 @@ var PRESETS={A:[10,20,30,40], B:[20,40,60,80]};
 var SVGNS='http://www.w3.org/2000/svg';
 
 /* ---------- 저장소 ---------- */
+/* ---------- 저장소 ---------- */
 var Store=(function(){
-  var mode='local', mem={};
+  var mem={};
   function lsGet(k){try{return window.localStorage.getItem(k);}catch(e){return mem[k]||null;}}
   function lsSet(k,v){try{window.localStorage.setItem(k,v);}catch(e){mem[k]=v;}}
   function lsKeys(){
@@ -518,20 +519,51 @@ var Store=(function(){
     return out;
   }
   return {
-    mode:mode,
-    label:function(){ return '이 기기에만 저장됩니다'; },
+    mode:'online',
+    label:function(){ return CONFIG.ENDPOINT ? '구글 시트에 저장됩니다' : '이 기기에만 저장됩니다'; },
     save:function(rec){
       lsSet(rec.key,JSON.stringify(rec));
-      return Promise.resolve(true);
+      if(!CONFIG.ENDPOINT) return Promise.resolve(true);
+      return fetch(CONFIG.ENDPOINT,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify(rec)
+      }).then(function(r){return r.json();})
+        .then(function(j){
+          if(j&&j.ok===false) throw new Error(j.error||'저장 실패');
+          return true;
+        });
     },
     load:function(key){
       var v=lsGet(key);
-      return Promise.resolve(v?JSON.parse(v):null);
+      if(v) return Promise.resolve(JSON.parse(v));
+      if(!CONFIG.ENDPOINT) return Promise.resolve(null);
+      return this.loadAll().then(function(list){
+        for(var i=0;i<list.length;i++){
+          if(list[i].key===key) return list[i];
+        }
+        return null;
+      });
     },
     loadAll:function(){
-      return Promise.resolve(lsKeys().map(function(k){
-        try{return JSON.parse(lsGet(k));}catch(e){return null;}
-      }).filter(Boolean));
+      if(!CONFIG.ENDPOINT){
+        return Promise.resolve(lsKeys().map(function(k){
+          try{return JSON.parse(lsGet(k));}catch(e){return null;}
+        }).filter(Boolean));
+      }
+      return fetch(CONFIG.ENDPOINT)
+        .then(function(r){return r.json();})
+        .then(function(j){
+          var list=(j&&j.list)?j.list:[];
+          list.forEach(function(rec){
+            if(rec&&rec.key) lsSet(rec.key,JSON.stringify(rec));
+          });
+          return list;
+        }).catch(function(){
+          return lsKeys().map(function(k){
+            try{return JSON.parse(lsGet(k));}catch(e){return null;}
+          }).filter(Boolean);
+        });
     },
     saveLocalCopy:function(rec){lsSet(rec.key,JSON.stringify(rec));}
   };
